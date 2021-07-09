@@ -2,6 +2,8 @@ import pygame as pg
 import sys
 
 import settings
+import board
+import engine
 
 
 class EventManager:
@@ -23,7 +25,9 @@ class Chess:
         self.vars = settings.Settings()
         self.clock = pg.time.Clock()
         self.event_manager = EventManager(self)
-        self.screen = pg.display.set_mode((500, 500), pg.RESIZABLE)
+        self.screen = pg.display.set_mode((512, 512), pg.RESIZABLE)
+
+        self.board = board.Board(self)
     
     def run(self):
         while True:
@@ -36,8 +40,8 @@ class Chess:
         pass
 
     def draw(self):
-        pass
-
+        self.board.draw()
+        pg.display.flip()
 
 if __name__ == '__main__':
     chess = Chess()
