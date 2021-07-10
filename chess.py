@@ -2,6 +2,7 @@ import pygame as pg
 import sys
 
 import board
+import engine
 
 
 class Chess:
@@ -16,7 +17,6 @@ class Chess:
         while True:
             self.clock.tick(12)
             self.check_events()
-            self.update()
             self.draw()
 
     def check_events(self):
@@ -24,9 +24,6 @@ class Chess:
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 sys.exit()
-
-    def update(self):
-        pass
 
     def draw(self):
         self.display.fill('dark green')
