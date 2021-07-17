@@ -11,18 +11,18 @@ class Board:
         self.rect = self.image.get_rect(center=app.rect.center)
         self.sq_size = int(self.rect.w / 8)
 
-        self.highlighted_moves = []
         self.state = engine.BoardState()
-        self.pieces: dict = self.load_pieces()
         self.piece_mover = PieceMover(self)
+        self.pieces: dict = self.load_pieces()
+        self.highlighted_moves = []
 
     def load_pieces(self):
         pieces = {}
         for name, ext in [fn.split('.') for fn in os.listdir('images/pieces')]:
             fn = f"{'images/pieces'}/{name}.{ext}"
             img = pg.transform.scale(pg.image.load(fn), (self.sq_size, self.sq_size)).convert_alpha()
-            if name[0] == 'b':
-                img = pg.transform.rotate(img, 180)
+            """if name[0] == 'b':
+                img = pg.transform.rotate(img, 180)"""
             pieces.update({name: img})
         return pieces
 
@@ -53,8 +53,8 @@ class Board:
                 x = col * self.sq_size
                 y = row * self.sq_size
                 # draw pieces
-                if (piece_name := self.state.arr[row][col]) != '--':
-                    self.image.blit(self.pieces[piece_name], (x, y))
+                if (piece := self.state.arr[row][col]) != 'empty':
+                    self.image.blit(self.pieces[piece.name], (x, y))
 
 
 class PieceMover:
@@ -67,28 +67,22 @@ class PieceMover:
 
     def handle_click(self):
         mouse_x, mouse_y = pg.mouse.get_pos()
-        click_r = mouse_y // self.board.sq_size
-        click_c = mouse_x // self.board.sq_size
-        if self.move_started:
-            if (click_r, click_c) in self.board.highlighted_moves:
-                self.to_pos = (click_r, click_c)
-                self.move_piece(self.from_pos, self.to_pos)
-                self.board.state.swap_turns()
-            self.move_started = False
-            self.board.highlighted_moves.clear()
+        r = mouse_y // self.board.sq_size
+        c = mouse_x // self.board.sq_size
+        if (not self.move_started) and ((r,c) in self.board.state.valid_moves.keys()):
+            self.start_move(r, c)
         else:
-            if (click_r, click_c) in self.board.state.valid_moves.keys():
-                    self.move_started = True
-                    self.from_pos = (click_r, click_c)
-                    self.board.highlighted_moves.extend(self.board.state.valid_moves.get((click_r, click_c), []))
-                    print(self.board.highlighted_moves)
+            self.end_move(r, c)
+    
+    def start_move(self, r, c):
+        self.move_started = True
+        self.from_pos = (r, c)
+        self.board.highlighted_moves.extend(self.board.state.valid_moves.get((r, c), []))
 
-    def move_piece(self, from_pos, to_pos):
-        if from_pos != to_pos:
-            board = self.board.state.arr
-            from_r, from_c = from_pos
-            to_r, to_c = to_pos
-            moved_piece = board[from_r][from_c]
-            board[to_r][to_c] = moved_piece
-            board[from_r][from_c] = '--'
-            self.board.state.get_valid_moves()
+    def end_move(self, r, c):
+        self.move_started = False
+        if (r, c) in self.board.highlighted_moves:
+            self.to_pos = (r, c)
+            self.board.state.arr[self.from_pos[0]][self.from_pos[1]].move_piece(self.from_pos, self.to_pos)
+            self.board.state.swap_turns()
+        self.board.highlighted_moves.clear()
