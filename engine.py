@@ -1,5 +1,5 @@
 import time
-
+from copy import deepcopy
 
 class Piece:
     def __init__(self, state, color, type):
@@ -156,18 +156,20 @@ class BoardState:
             [P(s, 'w'), P(s, 'w'), P(s, 'w'), P(s, 'w'), P(s, 'w'), P(s, 'w'), P(s, 'w'), P(s, 'w')],
             [R(s, 'w'), N(s, 'w'), B(s, 'w'), Q(s, 'w'), K(s, 'w'), B(s, 'w'), N(s, 'w'), R(s, 'w')]
         ]
+
         self.max_index = len(self.arr) - 1
         self.curr_turn = 'w'
         self.last_turn = 'b'
         self.valid_moves = {}
         self.get_valid_moves()
 
-        """tests = []
-        for test in range(10000):
+        tests = []
+        for test in range(31**2):
             start = time.time()
-            self.get_valid_moves()
+            state = deepcopy(self)
+            state.get_valid_moves()
             tests.append(time.time() - start)
-        print(sum(tests) / len(tests))"""
+        print(sum(tests))
 
     def swap_turns(self) -> None:
         self.curr_turn, self.last_turn = self.last_turn, self.curr_turn
