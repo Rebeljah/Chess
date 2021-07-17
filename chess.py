@@ -8,7 +8,7 @@ import engine
 class Chess:
     def __init__(self):
         self.clock = pg.time.Clock()
-        self.display = pg.display.set_mode((680, 680), pg.NOFRAME)
+        self.display = pg.display.set_mode((680, 680))
         self.rect = self.display.get_rect()
 
         self.board = board.Board(self)

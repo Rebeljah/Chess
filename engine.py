@@ -1,17 +1,160 @@
 import time
 
 
+class Piece:
+    def __init__(self, state, color, type):
+        self.state = state
+        self.color = color
+        self.type = type
+        self.name = self.color + self.type
+        
+        self.move_count = 0
+
+    def __eq__(self, other):
+        return self.__repr__() == str(other)
+
+    def __repr__(self):
+        return self.color + self.type  # wp
+
+    def get_moves(self):
+        pass
+    
+    def move_piece(self, from_pos, to_pos) -> None:
+        if from_pos != to_pos:
+            from_r, from_c = from_pos
+            to_r, to_c = to_pos
+            self.state.arr[to_r][to_c] = self
+            self.state.arr[from_r][from_c] = Empty()
+
+class K(Piece):
+    def __init__(self, state, color):
+        super().__init__(state, color, 'k')
+
+    def get_moves(self, row, col):
+        moves = []
+        r, c = row, col
+        possible = [(r - 1, c), (r - 1, c + 1), (r, c + 1), (r + 1, c + 1), (r + 1, c), (r + 1, c - 1), (r, c - 1),
+                    (r - 1, c - 1)]
+        for r, c in possible:
+            if (
+                (0 <= r <= self.state.max_index) and (0 <= c <= self.state.max_index)
+                    and self.state.arr[r][c].color != self.state.curr_turn
+            ): moves.append((r, c))
+        return moves
+
+class N(Piece):
+    def __init__(self, state, color):
+        super().__init__(state, color, 'n')
+
+    def get_moves(self, r, c):
+        moves = []
+        possible = [(r - 1, c - 2), (r + 1, c - 2), (r - 2, c - 1), (r - 2, c + 1), (r - 1, c + 2), (r + 1, c + 2),
+                    (r + 2, c + 1), (r + 2, c - 1)]
+        for r, c in possible:
+            if (
+                (0 <= r <= self.state.max_index) and (0 <= c <= self.state.max_index)
+                and (self.state.arr[r][c].color != self.state.curr_turn)
+            ): moves.append((r, c))
+        return moves
+
+class Q(Piece):
+    def __init__(self, state, color):
+        super().__init__(state, color, 'q')
+    
+    def get_moves(self, row, col):
+        moves = []
+        for r_step, c_step in ((-1, 0), (0, 1), (1, 0), (0, -1), (-1, -1), (-1, 1), (1, 1), (1, -1)):
+            r, c = row, col
+            while (0 <= (r := r + r_step) <= self.state.max_index) and (0 <= (c := c + c_step) <= self.state.max_index):
+                if (piece := self.state.arr[r][c]) == 'empty':
+                    moves.append((r, c))
+                elif piece.color == self.state.last_turn:
+                    moves.append((r, c))
+                    break
+                else:
+                    break
+        return moves
+
+class B(Piece):
+    def __init__(self, state, color):
+        super().__init__(state, color, 'b')
+    
+    def get_moves(self, row, col):
+        moves = []
+        for r_step, c_step in ((-1, -1), (-1, 1), (1, 1), (1, -1)):
+            r, c = row, col
+            while (0 <= (c := c+c_step) <= self.state.max_index) and (0 <= (r := r+r_step) <= self.state.max_index):
+                if (piece := self.state.arr[r][c]) == 'empty':
+                    moves.append((r, c))
+                elif piece.color != self.state.curr_turn:
+                    moves.append((r, c))
+                    break
+                else:
+                    break
+        return moves
+    
+class R(Piece):
+    def __init__(self, state, color):
+        super().__init__(state, color, 'r')
+    
+    def get_moves(self, row ,col):
+        moves = []
+        for r_step, c_step in ((-1, 0), (0, 1), (1, 0), (0, -1)):
+            r, c = row, col
+            while (0 <= (r := r+r_step) <= self.state.max_index) and (0 <= (c := c+c_step) <= self.state.max_index):
+                if (piece := self.state.arr[r][c]) == 'empty':
+                    moves.append((r, c))
+                elif piece.color == self.state.last_turn:
+                    moves.append((r, c))
+                    break
+                else:
+                    break
+        return moves
+
+class P(Piece):
+    def __init__(self, state, color):
+        super().__init__(state, color, 'p')
+
+        if self.color == 'w':
+            self.step = -1
+        else:
+            self.step = 1
+
+    def get_moves(self, row, col) -> list:
+        moves = []
+        r = row + self.step
+        if 0 <= r <= self.state.max_index:
+            # forward movement
+            if self.state.arr[r][col] == 'empty':
+                moves.append((r, col))
+                if self.move_count == 0 and self.state.arr[r + self.step][col] == 'empty':
+                    moves.append((r + self.step, col))
+            # diagonal movement
+            if (c := col - 1) >= 0:
+                if self.state.arr[r][c].color == self.state.last_turn:
+                    moves.append((r, c))
+            if (c := col + 1) <= self.state.max_index:
+                if self.state.arr[r][c].color == self.state.last_turn:
+                    moves.append((r, c))
+        return moves
+
+class Empty(Piece):
+    def __init__(self, state=None, color=''):
+        super().__init__(state, color, 'empty')
+
+
 class BoardState:
     def __init__(self):
+        s = self
         self.arr = [
-            ['br', 'bn', 'bb', 'bq', 'bk', 'bb', 'bn', 'br'],
-            ['bp', 'bp', 'bp', 'bp', 'bp', 'bp', 'bp', 'bp'],
-            ['--', '--', '--', '--', '--', '--', '--', '--'],
-            ['--', '--', '--', '--', '--', '--', '--', '--'],
-            ['--', '--', '--', '--', '--', '--', '--', '--'],
-            ['--', '--', '--', '--', '--', '--', '--', '--'],
-            ['wp', 'wp', 'wp', 'wp', 'wp', 'wp', 'wp', 'wp'],
-            ['wr', 'wn', 'wb', 'wq', 'wk', 'wb', 'wn', 'wr']
+            [R(s, 'b'), N(s, 'b'), B(s, 'b'), Q(s, 'b'), K(s, 'b'), B(s, 'b'), N(s, 'b'), R(s, 'b')],
+            [P(s, 'b'), P(s, 'b'), P(s, 'b'), P(s, 'b'), P(s, 'b'), P(s, 'b'), P(s, 'b'), P(s, 'b')],
+            [Empty(), Empty(), Empty(), Empty(), Empty(), Empty(), Empty(), Empty()],
+            [Empty(), Empty(), Empty(), Empty(), Empty(), Empty(), Empty(), Empty()],
+            [Empty(), Empty(), Empty(), Empty(), Empty(), Empty(), Empty(), Empty()],
+            [Empty(), Empty(), Empty(), Empty(), Empty(), Empty(), Empty(), Empty()],
+            [P(s, 'w'), P(s, 'w'), P(s, 'w'), P(s, 'w'), P(s, 'w'), P(s, 'w'), P(s, 'w'), P(s, 'w')],
+            [R(s, 'w'), N(s, 'w'), B(s, 'w'), Q(s, 'w'), K(s, 'w'), B(s, 'w'), N(s, 'w'), R(s, 'w')]
         ]
         self.max_index = len(self.arr) - 1
         self.curr_turn = 'w'
@@ -19,87 +162,20 @@ class BoardState:
         self.valid_moves = {}
         self.get_valid_moves()
 
-    def swap_turns(self):
+        """tests = []
+        for test in range(10000):
+            start = time.time()
+            self.get_valid_moves()
+            tests.append(time.time() - start)
+        print(sum(tests) / len(tests))"""
+
+    def swap_turns(self) -> None:
         self.curr_turn, self.last_turn = self.last_turn, self.curr_turn
         self.get_valid_moves()
 
     def get_valid_moves(self) -> None:
         self.valid_moves.clear()
-        get_moves = {
-            'p': self.get_pawn_moves, 'r': self.get_rook_moves, 'k': self.get_king_moves,
-            'b': self.get_bishop_moves, 'q': self.get_queen_moves, 'n': self.get_knight_moves
-        }
         for r, row in enumerate(self.arr):
-            for c, square in enumerate(row):
-                if square[0] == self.curr_turn:
-                    self.valid_moves.update({(r, c): get_moves[square[1]](r, c)})
-
-    def get_pawn_moves(self, row, col):
-        moves = []
-        step = -1 if self.curr_turn == 'w' else 1
-        start_row = 6 if self.curr_turn == 'w' else 1
-        r = row + step
-        if 0 <= r <= self.max_index:
-            # forward movement
-            if self.arr[r][col] == '--':
-                moves.append((r, col))
-                if row == start_row and self.arr[r + step][col] == '--':
-                    moves.append((r + step, col))
-            # diagonal movement
-            if (c := col - 1) >= 0:
-                if self.arr[r][c][0] == self.last_turn:
-                    moves.append((r, c))
-            if (c := col + 1) <= self.max_index:
-                if self.arr[r][c][0] == self.last_turn:
-                    moves.append((r, c))
-        return moves
-
-    def get_knight_moves(self, r , c):
-        moves = []
-        possible = [(r-1, c-2), (r+1, c-2), (r-2, c-1), (r-2, c+1), (r-1, c+2), (r+1, c+2), (r+2, c+1), (r+2, c-1)]
-        for r, c in possible:
-            if (0 <= r <= self.max_index) and (0 <= c <= self.max_index) and (self.arr[r][c][0] != self.curr_turn):
-                moves.append((r, c))
-        return moves
-
-    def get_king_moves(self, row, col):
-        moves = []
-        r, c = row, col
-        possible = [(r - 1, c), (r - 1, c + 1), (r, c + 1), (r + 1, c + 1), (r + 1, c), (r + 1, c - 1), (r, c - 1),
-                    (r - 1, c - 1)]
-        for r, c in possible:
-            if (0 <= r <= self.max_index) and (0 <= c <= self.max_index) and self.arr[r][c][
-                0] != self.curr_turn:
-                moves.append((r, c))
-        return moves
-
-    def get_rook_moves(self, row, col):
-        moves = []
-        for r_step, c_step in ((-1, 0), (0, 1), (1, 0), (0, -1)):
-            r, c = row, col
-            while (0 <= (r := r+r_step) <= self.max_index) and (0 <= (c := c+c_step) <= self.max_index):
-                if (square := self.arr[r][c]) == '--':
-                    moves.append((r, c))
-                elif square[0] == self.last_turn:
-                    moves.append((r, c))
-                    break
-                else:
-                    break
-        return moves
-
-    def get_bishop_moves(self, row, col):
-        moves = []
-        for r_step, c_step in ((-1, -1), (-1, 1), (1, 1), (1, -1)):
-            r, c = row, col
-            while (0 <= (c := c+c_step) <= self.max_index) and (0 <= (r := r+r_step) <= self.max_index):
-                if (square := self.arr[r][c]) == '--':
-                    moves.append((r, c))
-                elif square[0] != self.curr_turn:
-                    moves.append((r, c))
-                    break
-                else:
-                    break
-        return moves
-
-    def get_queen_moves(self, row ,col):
-        return self.get_bishop_moves(row, col) + self.get_rook_moves(row, col)
+            for c, piece in enumerate(row):
+                if piece != 'empty' and piece.color == self.curr_turn:
+                    self.valid_moves.update({(r, c): piece.get_moves(r, c)})
