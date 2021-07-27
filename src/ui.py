@@ -18,7 +18,7 @@ class BoardUI:
 
     def load_pieces(self):
         pieces = {}
-        image_dir = 'images/pieces'
+        image_dir = 'src/images/pieces'
         for name, ext in [fn.split('.') for fn in os.listdir(image_dir)]:
             fn = f"{image_dir}/{name}.{ext}"
             img = pg.transform.scale(pg.image.load(fn), (self.sq_size, self.sq_size)).convert_alpha()
@@ -41,7 +41,7 @@ class BoardUI:
                 self.image.fill(rgb, (x, y, self.sq_size, self.sq_size))
 
     def draw_highlights(self):
-        for move in self.board_state.get_moves_of_position(self.input.from_pos):
+        for move in self.board_state.get_moves_of_square(self.input.from_pos):
             y, x = move.to_pos
             x *= self.sq_size
             y *= self.sq_size
@@ -50,12 +50,16 @@ class BoardUI:
     def draw_pieces(self):
         for row in range(8):
             for col in range(8):
-                square = self.board_state.board_array[row][col]
+                square = self.board_state.get_piece(row, col)
                 x = col * self.sq_size
                 y = row * self.sq_size
                 # draw pieces
                 if square != '--':
-                    self.image.blit(self.piece_images[square], (x, y))
+                    image = self.piece_images[square]
+                    """if self.app.mode == 'pvp' and square[0] == 'b':
+                        image = pg.transform.rotate(image, 180)"""
+                    self.image.blit(image, (x, y))
+
 
     class BoardInput:
         def __init__(self, board_ui):
@@ -67,18 +71,19 @@ class BoardUI:
             self.from_pos = None
 
         def player_click(self):
-            if self.app.mode == 'pvp' or self.board_state.current_color == 'w':
-                x, y = pg.mouse.get_pos()
-                square_clicked = (y // self.board.sq_size, x // self.board.sq_size)
+            x, y = pg.mouse.get_pos()
+            square_clicked = (y // self.board.sq_size, x // self.board.sq_size)
 
-                if not self.move_started:
-                    if square_clicked in self.board_state.get_from_positions():
-                        self.move_started = True
-                        self.from_pos = square_clicked
-
-                else:  # move started
-                    for move in self.board_state.get_moves_of_position(self.from_pos):
-                        if move.to_pos == square_clicked:
-                            self.board_state.make_move(move)
-                    self.move_started = False
-                    self.from_pos = None
+            if (not self.move_started) and (square_clicked in self.board_state.get_movable_squares()):
+                # start a move
+                self.move_started = True
+                self.from_pos = square_clicked
+            else:
+                # make move
+                for move in self.board_state.get_moves_of_square(self.from_pos):
+                    if move.to_pos == square_clicked:
+                        self.board_state.move_maker.apply_move(move)
+                        break
+                # End move
+                self.move_started = False
+                self.from_pos = None

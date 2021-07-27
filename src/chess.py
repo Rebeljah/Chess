@@ -1,23 +1,18 @@
-import cProfile
-
 import pygame as pg
 import sys
 
 import ui
 import engine
-import ai
 
 
 class Chess:
-    def __init__(self, mode='pvp'):
+    def __init__(self):
         self.clock = pg.time.Clock()
         self.display = pg.display.set_mode((680, 680))
         self.rect = self.display.get_rect()
 
-        self.mode = mode
         self.board_state = engine.BoardState(self)
         self.board_ui = ui.BoardUI(self)
-        self.minimax = ai.MiniMax(self.board_state)
 
     def run(self):
         while True:
@@ -33,7 +28,7 @@ class Chess:
                 self.board_ui.input.player_click()
             elif event.type == pg.KEYDOWN:
                 if event.key == pg.K_z:
-                    self.board_state.undo_move(move=None, swap_tuns=True, regenerate_moves=True)
+                    self.board_state.move_maker.apply_move(is_undo=True)  # undo the last move taken
 
     def draw(self):
         self.display.fill('pink')
@@ -42,6 +37,6 @@ class Chess:
 
 
 if __name__ == '__main__':
-    chess = Chess(mode='pvp')
+    chess = Chess()
     chess.run()
-    # cProfile.run("chess.board_state.move_generator.test()")
+    # cProfile.run("src.board_state.move_generator.test()")
