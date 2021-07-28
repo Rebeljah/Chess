@@ -2,17 +2,19 @@ import pygame as pg
 import os
 
 from constants import Color as color
+pg.font.init()
 
 
 class BoardUI:
     def __init__(self, app):
         self.app = app
-        self.board_state = app.board_state
+        self.engine = app.engine
 
-        self.image = pg.Surface((app.rect.w, app.rect.h)).convert_alpha()
+        self.image = pg.Surface((app.rect.w, app.rect.h))
         self.rect = self.image.get_rect(center=app.rect.center)
         self.sq_size = int(self.rect.w / 8)
 
+        self.endgame_banner = EndgameBanner(self)
         self.input = self.BoardInput(self)
         self.piece_images: dict = self.load_pieces()
 
@@ -29,6 +31,13 @@ class BoardUI:
         self.draw_board()
         self.draw_highlights()
         self.draw_pieces()
+
+        is_stalemate, is_checkmate = self.engine.get_endgame_state()
+        if is_stalemate:
+            self.endgame_banner.draw('STALEMATE!')
+        elif is_checkmate:
+            self.endgame_banner.draw('CHECKMATE!')
+
         self.app.display.blit(self.image, self.rect)
 
     def draw_board(self):
@@ -41,7 +50,7 @@ class BoardUI:
                 self.image.fill(rgb, (x, y, self.sq_size, self.sq_size))
 
     def draw_highlights(self):
-        for move in self.board_state.get_moves_of_square(self.input.from_pos):
+        for move in self.engine.get_moves_of_square(self.input.from_pos):
             y, x = move.to_pos
             x *= self.sq_size
             y *= self.sq_size
@@ -50,7 +59,7 @@ class BoardUI:
     def draw_pieces(self):
         for row in range(8):
             for col in range(8):
-                square = self.board_state.get_piece(row, col)
+                square = self.engine.get_piece(row, col)
                 x = col * self.sq_size
                 y = row * self.sq_size
                 # draw pieces
@@ -60,12 +69,11 @@ class BoardUI:
                         image = pg.transform.rotate(image, 180)"""
                     self.image.blit(image, (x, y))
 
-
     class BoardInput:
         def __init__(self, board_ui):
             self.board = board_ui
             self.app = board_ui.app
-            self.board_state = board_ui.app.board_state
+            self.board_state = board_ui.app.engine
 
             self.move_started = False
             self.from_pos = None
@@ -87,3 +95,15 @@ class BoardUI:
                 # End move
                 self.move_started = False
                 self.from_pos = None
+
+
+class EndgameBanner:
+    def __init__(self, board_ui):
+        self.board_ui = board_ui
+
+    def draw(self, text):
+        font = pg.font.SysFont('arial', 50, bold=True)
+        font_render = font.render(text, False, (0, 0, 0))
+        rect = font_render.get_rect(center=self.board_ui.rect.center)
+        pg.draw.rect(self.board_ui.image, (255, 255, 255), rect, border_radius=25)
+        self.board_ui.image.blit(font_render, rect)
