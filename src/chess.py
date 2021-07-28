@@ -8,10 +8,14 @@ import engine
 class Chess:
     def __init__(self):
         self.clock = pg.time.Clock()
+
         self.display = pg.display.set_mode((680, 680))
+        pg.display.set_caption('PyChess')
+        pg.display.set_icon(pg.image.load('src/images/icon.png').convert_alpha())
+
         self.rect = self.display.get_rect()
 
-        self.board_state = engine.BoardState(self)
+        self.engine = engine.Engine(self)
         self.board_ui = ui.BoardUI(self)
 
     def run(self):
@@ -28,10 +32,9 @@ class Chess:
                 self.board_ui.input.player_click()
             elif event.type == pg.KEYDOWN:
                 if event.key == pg.K_z:
-                    self.board_state.move_maker.apply_move(is_undo=True)  # undo the last move taken
+                    self.engine.move_maker.apply_move(is_undo=True)  # undo the last move taken
 
     def draw(self):
-        self.display.fill('pink')
         self.board_ui.draw()
         pg.display.flip()
 
